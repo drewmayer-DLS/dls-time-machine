@@ -77,7 +77,7 @@ input[type=range]{flex:1;accent-color:var(--hot);min-width:0}
 <div class="wrap">
   <div class="kicker">The Dan Le Batard Show with Stugotz</div>
   <h1 class="bebas">DLS Time Machine</h1>
-  <div class="sub bebas">Where do you want to go?</div>
+  <div class="sub bebas">Take me back, Jack</div>
   <div class="dial">
     <select id="y" aria-label="Year"></select>
     <select id="m" aria-label="Month"></select>
@@ -516,8 +516,8 @@ $('out').addEventListener('click', async ev => {
 });
 refreshCount();
 document.querySelector('.note').textContent = LIVE
-  ? 'Archive loaded (' + LIVE.__src + ') · ' + Object.keys(LIVE.episodes).length + ' dates · build 8' + (INDEX_ERR ? ' · ' + INDEX_ERR : '')
-  : 'Could not load the archive index, so this is sample data. ' + INDEX_ERR + '· build 8';
+  ? 'Archive loaded (' + LIVE.__src + ') · ' + Object.keys(LIVE.episodes).length + ' dates · build 9' + (INDEX_ERR ? ' · ' + INDEX_ERR : '')
+  : 'Could not load the archive index, so this is sample data. ' + INDEX_ERR + '· build 9';
 }
 </script>
 </body>
