@@ -440,7 +440,7 @@ function updateMediaSession(ep, part) {
   const title = part ? fmtDate(ep.date) + ' · ' + part.label + ' of ' + ep.parts.length : fmtDate(ep.date);
   try { document.title = title + ' · DLS Time Machine'; } catch (e) {}
   const base = { title: title, artist: 'DLS Time Machine', album: era(ep.date) };
-  const art = [{ src: new URL('cover.png', location.href).href, sizes: '1024x1024', type: 'image/png' }];
+  const cu = new URL('cover.png', location.href).href; const art = ['96x96','128x128','192x192','256x256','384x384','512x512','1024x1024'].map(z => ({ src: cu, sizes: z, type: 'image/png' }));
   try { navigator.mediaSession.metadata = new MediaMetadata(Object.assign({ artwork: art }, base)); MS_STATUS = 'MS ok'; }
   catch (e) {
     MS_STATUS = 'MS art err: ' + (e && e.message);
@@ -518,8 +518,8 @@ $('out').addEventListener('click', async ev => {
 });
 refreshCount();
 document.querySelector('.note').textContent = LIVE
-  ? 'Archive loaded (' + LIVE.__src + ') · ' + Object.keys(LIVE.episodes).length + ' dates · build 10' + (INDEX_ERR ? ' · ' + INDEX_ERR : '')
-  : 'Could not load the archive index, so this is sample data. ' + INDEX_ERR + '· build 10';
+  ? 'Archive loaded (' + LIVE.__src + ') · ' + Object.keys(LIVE.episodes).length + ' dates · build 11' + (INDEX_ERR ? ' · ' + INDEX_ERR : '')
+  : 'Could not load the archive index, so this is sample data. ' + INDEX_ERR + '· build 11';
 }
 </script>
 </body>
