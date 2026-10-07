@@ -1,0 +1,441 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>DLS Time Machine</title>
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Inter:wght@400;600&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#0d1020;--bg2:#1a1240;--card:#171a33;--line:#2c3160;--ink:#f4f1ea;--dim:#9aa0c8;--hot:#ff3d7f;--sun:#ffb340;--teal:#27e0c4;
+box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+html{scroll-padding-top:env(safe-area-inset-top,0px);color-scheme:dark}
+*,*:before,*:after{box-sizing:inherit}
+body{margin:0;background:var(--bg);background-image:radial-gradient(120% 60% at 50% 0%,var(--bg2),transparent 70%);color:var(--ink);font:400 16px/1.45 Inter,system-ui,sans-serif;min-height:100vh;padding-bottom:150px}
+.wrap{max-width:480px;margin:0 auto;padding:20px 18px}
+.bebas{font-family:'Bebas Neue',Impact,'Arial Narrow',sans-serif;letter-spacing:.04em;font-weight:400}
+h1{font-size:46px;line-height:.95;margin:6px 0 0;background:linear-gradient(90deg,var(--sun),var(--hot));-webkit-background-clip:text;background-clip:text;color:transparent}
+.kicker{color:var(--teal);font-size:13px;letter-spacing:.2em;text-transform:uppercase}
+.sub{font-size:24px;margin:26px 0 12px;color:var(--ink)}
+.dial{display:grid;grid-template-columns:minmax(0,1.2fr) minmax(0,1.4fr) minmax(0,1fr);gap:8px}
+html{-webkit-text-size-adjust:100%;text-size-adjust:100%}
+body{overflow-x:hidden}
+.wrap,.filters,.fl,.chips{min-width:0;max-width:100%}
+.filters{overflow:hidden}
+select{width:100%;appearance:none;-webkit-appearance:none;background:var(--card);color:var(--ink);border:1px solid var(--line);border-radius:12px;padding:14px 8px;font:400 22px 'Bebas Neue',Impact,sans-serif;letter-spacing:.06em;text-align:center;text-align-last:center}
+select:focus{outline:2px solid var(--teal)}
+button{font:inherit;cursor:pointer;border:0;color:inherit}
+.go{width:100%;margin-top:14px;padding:16px;border-radius:14px;background:linear-gradient(90deg,var(--hot),var(--sun));color:#1b0b14;font:400 28px 'Bebas Neue',Impact,sans-serif;letter-spacing:.08em;box-shadow:0 6px 24px #ff3d7f55}
+.go:disabled{opacity:.35;box-shadow:none;cursor:not-allowed}
+.or{text-align:center;color:var(--dim);margin:14px 0;font-size:13px;letter-spacing:.2em;text-transform:uppercase}
+.rand{width:100%;padding:14px;border-radius:14px;background:transparent;border:2px dashed var(--teal);color:var(--teal);font:400 26px 'Bebas Neue',Impact,sans-serif;letter-spacing:.08em}
+.ep{margin-top:26px;background:var(--card);border:1px solid var(--line);border-radius:18px;padding:20px}
+.ep .show{color:var(--sun);font-size:15px;letter-spacing:.12em}
+.ep .date{font-size:40px;line-height:1;margin:6px 0 4px}
+.badge{display:inline-block;font-size:11px;letter-spacing:.14em;text-transform:uppercase;border:1px solid var(--teal);color:var(--teal);border-radius:99px;padding:2px 10px}
+.ep h2{font-size:20px;margin:14px 0 4px;font-weight:600}
+.meta{color:var(--dim);font-size:14px}
+.desc{margin:12px 0 0;color:#d4d6ef;font-size:15px}
+.src{margin-top:10px;font-size:12px;color:var(--dim)}
+.play{width:100%;margin-top:16px;padding:14px;border-radius:14px;background:var(--teal);color:#06231f;font:400 28px 'Bebas Neue',Impact,sans-serif;letter-spacing:.08em}
+.none h2{margin-top:0}
+.nav{display:flex;gap:8px;margin-top:14px}
+.nav button{flex:1;padding:11px 8px;border-radius:12px;background:var(--bg);border:1px solid var(--line);font-size:14px}
+.note{margin-top:22px;font-size:12px;color:var(--dim);text-align:center}
+.player{position:fixed;left:0;right:0;bottom:0;background:#0b0d1ef2;backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);border-top:1px solid var(--line);padding:10px 16px calc(10px + env(safe-area-inset-bottom,0px));z-index:5}
+.pin{max-width:480px;margin:0 auto}
+.now{font-size:13px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;color:var(--dim);margin-bottom:6px}
+.now b{color:var(--ink);font-weight:600}
+.bar{display:flex;align-items:center;gap:8px;font-size:12px;color:var(--dim);font-variant-numeric:tabular-nums}
+input[type=range]{flex:1;accent-color:var(--hot);min-width:0}
+.ctl{display:flex;align-items:center;justify-content:space-between;margin-top:6px;gap:10px}
+.ctl button{background:var(--card);border:1px solid var(--line);border-radius:50%;width:44px;height:44px;font-size:12px;font-weight:600}
+.ctl .pp{width:56px;height:56px;background:var(--hot);border-color:var(--hot);font-size:22px;color:#1b0b14}
+.ctl button:disabled{opacity:.35}
+.vol{display:flex;align-items:center;gap:6px;width:110px;font-size:14px}
+.filters{margin-top:12px;background:var(--card);border:1px solid var(--line);border-radius:14px;padding:2px 14px}
+.filters summary{list-style:none;cursor:pointer;font-size:22px;padding:10px 0;display:flex;justify-content:space-between;color:var(--sun);letter-spacing:.06em}
+.filters summary::-webkit-details-marker{display:none}
+.filters summary:after{content:'+'}
+.filters[open] summary:after{content:'–'}
+.fl{margin:4px 0 14px}
+.lb{display:block;font-size:11px;letter-spacing:.16em;text-transform:uppercase;color:var(--dim);margin-bottom:6px}
+.filters select,.filters input{display:block;box-sizing:border-box;width:100%;max-width:100%;min-width:0;-webkit-appearance:none;appearance:none;background:var(--bg);color:var(--ink);border:1px solid var(--line);border-radius:10px;padding:12px;font:400 16px Inter,system-ui,sans-serif;text-align:left;text-align-last:left;letter-spacing:0}
+.chips{display:flex;flex-wrap:wrap;gap:6px}
+.chip{background:var(--bg);border:1px solid var(--line);border-radius:99px;padding:7px 12px;font-size:14px;color:var(--ink)}
+.chip.on{background:var(--teal);border-color:var(--teal);color:#06231f;font-weight:600}
+.clr{background:none;color:var(--dim);text-decoration:underline;padding:2px 0 12px;font-size:14px}
+.fhint{font-size:12px;color:var(--dim);margin:0 0 8px}
+.browse{width:100%;margin-top:10px;padding:13px;border-radius:14px;background:var(--card);border:1px solid var(--line);color:var(--ink);font:400 22px 'Bebas Neue',Impact,sans-serif;letter-spacing:.08em}
+.row{display:flex;gap:12px;width:100%;text-align:left;align-items:center;background:var(--bg);border:1px solid var(--line);border-radius:12px;padding:10px 12px;margin-top:8px}
+.rd{font-size:22px;color:var(--sun);min-width:104px}
+.rt{font-size:14px}.rt small{color:var(--dim)}
+.more{width:100%;margin-top:12px;padding:12px;border-radius:12px;background:var(--bg);border:1px solid var(--teal);color:var(--teal)}
+.parts{display:flex;flex-wrap:wrap;gap:6px;margin-top:12px}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="kicker">The Dan Le Batard Show with Stugotz</div>
+  <h1 class="bebas">DLS Time Machine</h1>
+  <div class="sub bebas">Where do you want to go?</div>
+  <div class="dial">
+    <select id="y" aria-label="Year"></select>
+    <select id="m" aria-label="Month"></select>
+    <select id="d" aria-label="Day"></select>
+  </div>
+  <details class="filters" id="fp">
+    <summary class="bebas"><span>Filters <span id="fcount"></span></span></summary>
+    <div class="fl"><span class="lb">Era</span>
+      <select id="fe"><option value="">All eras</option><option value="espn">2015–2019 · ESPN era</option><option value="recent">2020–present</option></select></div>
+    <div class="fl"><span class="lb">Show type</span><select id="ft"></select></div>
+    <div class="fl"><span class="lb">Crew (must include)</span><div class="chips" id="chips"></div></div>
+    <div class="fl"><span class="lb">Episode # or keyword</span><input id="fq" type="search" placeholder="e.g. 1234 or october"></div>
+    <p class="fhint">Random Day uses these filters. Browse also uses the date dial (year, month and day can be left partly empty).</p>
+    <button class="clr" id="clr">Clear all</button>
+  </details>
+  <button class="go" id="go" disabled>Take Me There</button>
+  <div class="or">or</div>
+  <button class="rand" id="rand">🎲 Random Day</button>
+  <button class="browse" id="browse">Browse episodes</button>
+  <div id="out"></div>
+  <p class="note">Prototype · sample archive data and generated test audio. Swap in a real archive via the Archive layer.</p>
+</div>
+
+<div class="player">
+  <div class="pin">
+    <div class="now" id="now">Nothing loaded — pick a day.</div>
+    <div class="bar"><span id="cur">0:00</span><input type="range" id="seek" min="0" max="1000" value="0" disabled aria-label="Progress"><span id="dur">0:00</span></div>
+    <div class="ctl">
+      <button id="back" disabled aria-label="Rewind 15 seconds">−15</button>
+      <button class="pp" id="pp" disabled aria-label="Play or pause">▶</button>
+      <button id="fwd" disabled aria-label="Forward 30 seconds">+30</button>
+      <div class="vol">🔊<input type="range" id="vol" min="0" max="100" value="80" aria-label="Volume"></div>
+    </div>
+  </div>
+</div>
+<audio id="audio" preload="metadata"></audio>
+
+<!-- Archive index for real recordings (Drive-backed). Add dates here; they override the mock sample rows. -->
+<script type="application/json" id="drive-index">
+{"2016-05-20":{"parts":[
+{"label":"Part 1","drive_id":"11odUMzZleHfRhdMUU-96SMi-DXa11HGH","bytes":19109092,"recorded_at":"10:58:19"},
+{"label":"Part 2","drive_id":"1312HDuysgu5AKb7AxliXoj7yoDeii0eJ","bytes":20039259,"recorded_at":"11:41:02"},
+{"label":"Part 3","drive_id":"1x0n9gCkkhyGoCP4SC0wT7l2SFMrQyYC5","bytes":19116197,"recorded_at":"11:58:26"},
+{"label":"Part 4","drive_id":"1zwiilFZjbM28V7ZmL_u5_YMarTYW5EYP","bytes":19111182,"recorded_at":"12:58:33"},
+{"label":"Part 5","drive_id":"1sIXbsf2qX20rsXDKC6S_VBClTk5TEfCo","bytes":36371432,"recorded_at":"13:06:38"}]}}
+</script>
+
+<script>
+/* =========================================================
+   ARCHIVE DATA LAYER  (no UI code in here)
+   Contract any real archive must implement:
+     getBounds()            -> {min:'YYYY-MM-DD', max:'YYYY-MM-DD'}
+     getByDate(iso)         -> Episode | null
+     getRandom()            -> random Episode with availability === 'available'
+     getNeighbors(iso)      -> {prev:Episode|null, next:Episode|null}  (nearest available)
+     resolveAudio(episode, part?) -> Promise<string>  (playable URL; part is one of episode.parts[])
+   Episode.parts (optional) = [{part_id, label, audio_url, duration, recorded_at}], played in order.
+     getRandom(filters)     -> same, limited to episodes matching filters
+     search(filters, off, lim) -> {total, items[]}
+     matches(episode, filters) -> boolean
+     getFacets()            -> {crew[], show_types[]}
+   Filters = {era:'espn'|'recent', show_type, crew[] (AND), year, month, day, q}
+   Episode = {episode_id, episode_number, date, era, title, show_type, crew[],
+              audio_url, duration (sec), description, source,
+              availability: 'available'|'unavailable'}
+   To connect a real source: replace MockArchive with an adapter
+   (REST API, JSON index, RSS feed...) exposing the same methods.
+   ========================================================= */
+const MockArchive = (() => {
+  const START = '2015-01-05', END = '2026-10-07';
+  // Show formats: 3 hours on ESPN Radio until Aug 2020; after that 2 national hours + LOUR, Big Suey, post-game show.
+  const SHOW_TYPES = ['Full Show', 'Hour 1', 'Hour 2', 'Hour 3', 'Local Hour (LOUR)', 'The Big Suey', 'Post Game Show'];
+  const pickType = (h, date) => {
+    const pool = date < '2020-08-17' ? ['Full Show', 'Hour 1', 'Hour 2', 'Hour 3']
+      : ['Full Show', 'Hour 1', 'Hour 2', 'Local Hour (LOUR)', 'The Big Suey', 'Post Game Show'];
+    return pool[h % pool.length];
+  };
+  // Roster from public sources (producers, announcer, regular co-hosts). Assignment per episode is SAMPLE data.
+  const CREW = ['Dan Le Batard', 'Stugotz', 'Mike Ryan', 'Roy Bellamy', 'Billy Gil', 'Chris Cote', 'Jeremy Taché',
+    'Anthony Calatayud', 'Jessica Smetana', 'Lucy Rohden', 'Juju Gotti', 'Gonzalo Le Batard',
+    'Greg Cote', 'Amin Elhassan'];
+  const pickCrew = (h, date) => {
+    const c = CREW.filter((n, i) => {
+      if (n === 'Stugotz' && date > '2026-06-18') return false;  // departed June 2026
+      if (n === 'Billy Gil' && date > '2025-10-16') return false; // left Oct 2025
+      if (i === 0) return h % 11;
+      if (i === 1) return h % 13;
+      if (i === 2) return h % 4;
+      return (h >>> (i + 3)) % 4 === 0;
+    });
+    return c.length ? c : ['Dan Le Batard'];
+  };
+  const hash = s => { let h = 2166136261; for (const c of s) { h ^= c.charCodeAt(0); h = Math.imul(h, 16777619); } return h >>> 0; };
+  const pad = n => String(n).padStart(2, '0');
+  const iso = dt => `${dt.getUTCFullYear()}-${pad(dt.getUTCMonth() + 1)}-${pad(dt.getUTCDate())}`;
+
+  // Sample "database": one record per weekday, built from a seeded generator.
+  const DB = new Map();
+  for (let t = Date.parse(START); t <= Date.parse(END); t += 864e5) {
+    const dt = new Date(t), wd = dt.getUTCDay();
+    if (wd === 0 || wd === 6) continue;
+    const date = iso(dt), h = hash(date);
+    const label = dt.toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric', timeZone: 'UTC' });
+    DB.set(date, {
+      episode_id: 'dls-' + date,
+      date,
+      title: `Sample Episode — ${pickType(h, date)}, ${label}`,
+      show_type: pickType(h, date),
+      era: date < '2020-01-01' ? 'espn' : 'recent',
+      crew: pickCrew(h, date),
+      audio_url: 'mock://' + date,
+      duration: 3600 * 2 + (h % 1800),
+      description: 'Placeholder description. A real archive adapter will supply the actual show notes and guest/topic metadata for this date.',
+      source: 'mock-sample',
+      availability: (h >>> 8) % 100 < 85 ? 'available' : 'unavailable'
+    });
+  }
+  // Real recordings: index lives in <script id="drive-index"> and overrides the mock row for that date.
+  let REAL = {};
+  try { REAL = JSON.parse(document.getElementById('drive-index').textContent); } catch (e) {}
+  for (const [date, r] of Object.entries(REAL)) {
+    const base = DB.get(date) || { era: date < '2020-01-01' ? 'espn' : 'recent' };
+    const parts = r.parts.map((p, i) => ({
+      part_id: date + '-p' + (i + 1), label: p.label || 'Part ' + (i + 1),
+      audio_url: 'drive://' + p.drive_id, recorded_at: p.recorded_at,
+      duration: Math.round(p.bytes * 8 / 64000) // estimated from file size at 64 kbps
+    }));
+    const label = new Date(date + 'T00:00:00Z').toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric', timeZone: 'UTC' });
+    DB.set(date, {
+      episode_id: 'dls-' + date, date, era: base.era,
+      title: 'Archive recording — ' + label,
+      show_type: 'Unlabeled', crew: [],
+      audio_url: parts[0].audio_url, parts,
+      duration: parts.reduce((a, p) => a + p.duration, 0),
+      description: parts.length + ' audio parts from the archive. Durations are estimated from file size.',
+      source: 'drive', availability: 'available'
+    });
+  }
+  const ALL = [...DB.values()].sort((a, b) => a.date < b.date ? -1 : 1), AVAIL = ALL.filter(e => e.availability === 'available');
+  ALL.forEach((e, i) => e.episode_number = i + 1);
+  // Filters: {era, show_type, crew[], year, month, day, q}. All optional; crew uses AND logic.
+  const match = (e, f = {}) => {
+    if (e.availability !== 'available') return false;
+    if (f.era && e.era !== f.era) return false;
+    if (f.show_type && e.show_type !== f.show_type) return false;
+    if (f.crew && !f.crew.every(c => e.crew.includes(c))) return false;
+    if (f.year && e.date.slice(0, 4) !== f.year) return false;
+    if (f.month && e.date.slice(5, 7) !== f.month) return false;
+    if (f.day && e.date.slice(8) !== f.day) return false;
+    const q = (f.q || '').trim().toLowerCase().replace(/^#/, '');
+    if (q) return /^\d+$/.test(q) ? e.episode_number === +q : (e.title + ' ' + e.crew.join(' ')).toLowerCase().includes(q);
+    return true;
+  };
+
+  // Generates a short soft-chord WAV so the player is testable offline.
+  function makeTone(seed) {
+    const sr = 8000, secs = 40, n = sr * secs, buf = new ArrayBuffer(44 + n * 2), v = new DataView(buf);
+    const w = (o, s) => [...s].forEach((c, i) => v.setUint8(o + i, c.charCodeAt(0)));
+    w(0, 'RIFF'); v.setUint32(4, 36 + n * 2, true); w(8, 'WAVEfmt '); v.setUint32(16, 16, true); v.setUint16(20, 1, true);
+    v.setUint16(22, 1, true); v.setUint32(24, sr, true); v.setUint32(28, sr * 2, true); v.setUint16(32, 2, true); v.setUint16(34, 16, true);
+    w(36, 'data'); v.setUint32(40, n * 2, true);
+    const base = 180 + (seed % 120), f = [base, base * 1.25, base * 1.5];
+    for (let i = 0; i < n; i++) {
+      const t = i / sr, env = Math.min(1, t * 2, (secs - t) * 2) * (0.6 + 0.4 * Math.sin(t * 1.3));
+      let s = 0; f.forEach(x => s += Math.sin(2 * Math.PI * x * t));
+      v.setInt16(44 + i * 2, s / 3 * env * 9000, true);
+    }
+    return URL.createObjectURL(new Blob([buf], { type: 'audio/wav' }));
+  }
+
+  return {
+    getBounds: () => ({ min: START, max: END }),
+    getByDate: async d => DB.get(d) || null,
+    getRandom: async f => { const p = AVAIL.filter(e => match(e, f)); return p[Math.floor(Math.random() * p.length)] || null; },
+    getNeighbors: async (d, f) => ({
+      prev: [...AVAIL].reverse().find(e => e.date < d && match(e, f)) || null,
+      next: AVAIL.find(e => e.date > d && match(e, f)) || null
+    }),
+    search: async (f, off = 0, lim = 20) => { const p = AVAIL.filter(e => match(e, f)); return { total: p.length, items: p.slice(off, off + lim) }; },
+    matches: (e, f) => match(e, f),
+    getFacets: () => ({ crew: CREW, show_types: SHOW_TYPES }),
+    resolveAudio: async (ep, part) => {
+      const u = (part || ep).audio_url;
+      if (u.startsWith('mock://')) return makeTone(hash(ep.episode_id));
+      if (u.startsWith('drive://')) return 'https://drive.usercontent.google.com/download?id=' + u.slice(8) + '&export=download&confirm=t';
+      return u;
+    }
+  };
+})();
+
+/* =========================================================
+   UI LAYER  (talks to the archive only through `Archive`)
+   ========================================================= */
+const Archive = MockArchive;
+const crewSel = new Set();
+const $ = id => document.getElementById(id);
+const MONTHS = ['January','February','March','April','May','June','July','August','September','October','November','December'];
+const pad = n => String(n).padStart(2, '0');
+const fmtDur = s => { s = Math.round(s); const h = Math.floor(s / 3600), m = Math.floor(s % 3600 / 60); return h ? `${h}h ${m}m` : `${m}m`; };
+const fmtClock = s => { s = Math.floor(s || 0); return `${Math.floor(s / 60)}:${pad(s % 60)}`; };
+const fmtDate = iso => new Date(iso + 'T00:00:00Z').toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric', timeZone: 'UTC' });
+const esc = s => String(s).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+const era = iso => iso < '2020-01-01' ? '2015–2019 · ESPN era' : '2020–present';
+
+const ys = $('y'), ms = $('m'), ds = $('d');
+const bounds = Archive.getBounds();
+const y0 = +bounds.min.slice(0, 4), y1 = +bounds.max.slice(0, 4);
+ys.innerHTML = '<option value="">YEAR</option>' + Array.from({ length: y1 - y0 + 1 }, (_, i) => `<option>${y0 + i}</option>`).join('');
+ms.innerHTML = '<option value="">MONTH</option>' + MONTHS.map((n, i) => `<option value="${i + 1}">${n.slice(0, 3).toUpperCase()}</option>`).join('');
+function fillDays() {
+  const keep = ds.value, y = +ys.value || 2016, m = +ms.value || 1, n = new Date(y, m, 0).getDate();
+  ds.innerHTML = '<option value="">DAY</option>' + Array.from({ length: n }, (_, i) => `<option>${i + 1}</option>`).join('');
+  if (keep && +keep <= n) ds.value = keep;
+  sync();
+}
+const sync = () => { $('go').disabled = !(ys.value && ms.value && ds.value); refreshCount(); };
+ys.onchange = ms.onchange = fillDays; ds.onchange = sync; fillDays();
+
+let current = null;
+const audio = $('audio');
+
+function showEpisode(ep) {
+  const [y, m, d] = ep.date.split('-');
+  ys.value = y; ms.value = +m; fillDays(); ds.value = +d; sync();
+  $('out').innerHTML = `<div class="ep">
+    <div class="show bebas">The Dan Le Batard Show with Stugotz</div>
+    <div class="date bebas">${esc(fmtDate(ep.date))}</div>
+    <span class="badge">${era(ep.date)}</span>
+    <h2>${esc(ep.title)}</h2>
+    <div class="meta">Episode #${ep.episode_number} · ${esc(ep.show_type)} · ${ep.parts ? '~' : ''}${fmtDur(ep.duration)}${ep.parts ? ' · ' + ep.parts.length + ' parts' : ''}</div>
+    <div class="meta">${ep.crew.length ? 'With ' + esc(ep.crew.join(', ')) : 'Crew not tagged yet'}</div>
+    <p class="desc">${esc(ep.description)}</p>
+    <div class="src">Source: ${esc(ep.source)} · ${esc(ep.episode_id)}</div>
+    ${ep.parts ? `<div class="parts">${ep.parts.map((p, i) => `<button type="button" class="chip" data-part="${i}">${esc(p.label)} · ~${fmtDur(p.duration)}</button>`).join('')}</div>` : ''}
+    <button class="play" id="playBtn">▶ Play</button></div>`;
+  $('playBtn').onclick = () => load(ep, true);
+  $('out').querySelectorAll('[data-part]').forEach(b => b.onclick = () => load(ep, true, +b.dataset.part));
+  $('out').scrollIntoView({ behavior: 'smooth', block: 'start' });
+}
+
+async function showNone(date, ep) {
+  const { prev, next } = await Archive.getNeighbors(date, filters());
+  const why = ep && ep.availability === 'available' ? "That day's episode is hidden by your current filters. Nearest matches:" : ep ? 'This episode exists in the archive but its audio is unavailable. Nearest matches:' : 'No show on that date in the archive (weekends and off days are common). Nearest matches:';
+  $('out').innerHTML = `<div class="ep none"><h2>${esc(fmtDate(date))}</h2><p class="meta">${why}</p>
+    <div class="nav">${prev ? `<button data-d="${prev.date}">← ${prev.date}</button>` : ''}${next ? `<button data-d="${next.date}">${next.date} →</button>` : ''}</div></div>`;
+  $('out').querySelectorAll('[data-d]').forEach(b => b.onclick = async () => showEpisode(await Archive.getByDate(b.dataset.d)));
+  $('out').scrollIntoView({ behavior: 'smooth', block: 'start' });
+}
+
+$('go').onclick = async () => {
+  const date = `${ys.value}-${pad(ms.value)}-${pad(ds.value)}`;
+  const ep = await Archive.getByDate(date);
+  if (ep && Archive.matches(ep, filters())) showEpisode(ep); else showNone(date, ep);
+};
+$('rand').onclick = async () => {
+  const ep = await Archive.getRandom(filters());
+  if (!ep) { $('out').innerHTML = '<div class="ep none"><h2>No match</h2><p class="meta">No available episode fits those filters. Loosen one and try again.</p></div>'; return; }
+  showEpisode(ep); load(ep, true);
+};
+
+let curPart = 0;
+async function load(ep, autoplay, partIdx = 0) {
+  const part = ep.parts ? ep.parts[partIdx] : null;
+  if (current && current.episode_id === ep.episode_id && curPart === partIdx) { if (autoplay) audio.play().catch(() => {}); return; }
+  current = ep; curPart = partIdx;
+  $('now').innerHTML = `<b>${esc(fmtDate(ep.date))}</b> · ${part ? esc(part.label) + ' of ' + ep.parts.length : esc(ep.title)}`;
+  audio.src = await Archive.resolveAudio(ep, part);
+  ['seek', 'back', 'fwd', 'pp'].forEach(i => $(i).disabled = false);
+  if (autoplay) audio.play().catch(() => {});
+}
+
+audio.onended = () => { if (current && current.parts && curPart < current.parts.length - 1) load(current, true, curPart + 1); };
+audio.onerror = () => {
+  if (!audio.getAttribute('src')) return;
+  const code = audio.error ? audio.error.code : '?';
+  const id = current && current.parts ? current.parts[curPart].audio_url.slice(8) : null;
+  $('now').innerHTML = `<b>Load failed (code ${code})</b> · <a href="#" id="selftest" style="color:var(--teal)">run test</a>` + (id ? ` · <a href="https://drive.google.com/file/d/${id}/view" target="_blank" rel="noopener" style="color:var(--teal)">open in Drive</a>` : '');
+};
+// Diagnostic: can this page play ANY external audio? Distinguishes a sandbox block from a Drive-specific problem.
+$('now').addEventListener('click', ev => {
+  if (ev.target.id !== 'selftest') return;
+  ev.preventDefault();
+  const out = m => $('now').innerHTML = `<b>${m}</b>`;
+  out('Testing…');
+  const t = new Audio(); t.preload = 'auto';
+  const timer = setTimeout(() => out('Test: no response after 10s'), 10000);
+  t.oncanplay = () => { clearTimeout(timer); out('Test: external audio WORKS (Drive is the problem)'); };
+  t.onerror = () => { clearTimeout(timer); out('Test: external audio BLOCKED (code ' + (t.error ? t.error.code : '?') + ')'); };
+  t.src = 'https://www.w3schools.com/html/horse.mp3';
+  t.load();
+});
+const pp = $('pp');
+pp.onclick = () => audio.paused ? audio.play() : audio.pause();
+audio.onplay = () => pp.textContent = '❚❚';
+audio.onpause = () => pp.textContent = '▶';
+audio.onloadedmetadata = () => $('dur').textContent = fmtClock(audio.duration);
+audio.ontimeupdate = () => {
+  $('cur').textContent = fmtClock(audio.currentTime);
+  if (audio.duration && !seeking) $('seek').value = audio.currentTime / audio.duration * 1000;
+};
+let seeking = false;
+const seek = $('seek');
+seek.oninput = () => { seeking = true; $('cur').textContent = fmtClock(seek.value / 1000 * audio.duration); };
+seek.onchange = () => { audio.currentTime = seek.value / 1000 * audio.duration; seeking = false; };
+$('back').onclick = () => audio.currentTime = Math.max(0, audio.currentTime - 15);
+$('fwd').onclick = () => audio.currentTime = Math.min(audio.duration || 0, audio.currentTime + 30);
+$('vol').oninput = e => audio.volume = e.target.value / 100;
+audio.volume = .8;
+
+/* ---------- Filters + Browse ---------- */
+function filters(withDate) {
+  const f = { era: $('fe').value, show_type: $('ft').value, crew: [...crewSel], q: $('fq').value };
+  if (withDate) { f.year = ys.value; f.month = ms.value ? pad(ms.value) : ''; f.day = ds.value ? pad(ds.value) : ''; }
+  return f;
+}
+function refreshCount() {
+  const f = filters(true);
+  const n = [f.era, f.show_type, f.q.trim()].filter(Boolean).length + f.crew.length;
+  $('fcount').textContent = n ? `· ${n} active` : '';
+  Archive.search(f, 0, 0).then(r => $('browse').textContent = `Browse episodes (${r.total.toLocaleString()})`);
+}
+const facets = Archive.getFacets();
+$('ft').innerHTML = '<option value="">All show types</option>' + facets.show_types.map(t => `<option>${esc(t)}</option>`).join('');
+$('chips').innerHTML = facets.crew.map(c => `<button type="button" class="chip" data-c="${esc(c)}">${esc(c)}</button>`).join('');
+$('chips').onclick = ev => {
+  const b = ev.target.closest('.chip'); if (!b) return;
+  const c = b.dataset.c; crewSel.has(c) ? crewSel.delete(c) : crewSel.add(c);
+  b.classList.toggle('on'); refreshCount();
+};
+$('fe').onchange = $('ft').onchange = refreshCount;
+$('fq').oninput = refreshCount;
+$('fq').onkeydown = e => { if (e.key === 'Enter') browse(); };
+$('clr').onclick = () => {
+  $('fe').value = ''; $('ft').value = ''; $('fq').value = ''; crewSel.clear();
+  document.querySelectorAll('.chip').forEach(c => c.classList.remove('on'));
+  ys.value = ''; ms.value = ''; ds.value = ''; fillDays();
+};
+
+let browseF = null, shown = 0;
+async function browse(more) {
+  if (!more) { browseF = filters(true); shown = 0; }
+  const { total, items } = await Archive.search(browseF, shown, 20);
+  shown += items.length;
+  const rows = items.map(e => `<button class="row" data-id="${e.date}"><span class="rd bebas">${e.date}</span><span class="rt">${esc(e.show_type)} · #${e.episode_number}<br><small>${esc(e.crew.join(', '))}</small></span></button>`).join('');
+  if (!more) {
+    $('out').innerHTML = `<div class="ep"><div class="show bebas">${total.toLocaleString()} matching episode${total === 1 ? '' : 's'}</div><div id="rows">${rows || '<p class="meta">Nothing matches. Loosen a filter.</p>'}</div><button class="more" id="more"></button></div>`;
+    $('out').scrollIntoView({ behavior: 'smooth', block: 'start' });
+    $('more').onclick = () => browse(true);
+  } else $('rows').insertAdjacentHTML('beforeend', rows);
+  $('more').style.display = shown < total ? '' : 'none';
+  $('more').textContent = `Load more (${(total - shown).toLocaleString()} left)`;
+}
+$('browse').onclick = () => browse(false);
+$('out').addEventListener('click', async ev => {
+  const r = ev.target.closest('.row'); if (!r) return;
+  showEpisode(await Archive.getByDate(r.dataset.id));
+});
+refreshCount();
+</script>
+</body>
+</html>
