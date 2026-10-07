@@ -441,7 +441,7 @@ function updateMediaSession(ep, part) {
       title: part ? fmtDate(ep.date) + ' · ' + part.label + ' of ' + ep.parts.length : fmtDate(ep.date),
       artist: 'DLS Time Machine',
       album: era(ep.date),
-      artwork: COVER ? [{ src: COVER, sizes: '512x512', type: 'image/png' }] : []
+      artwork: [{ src: new URL('cover.png', location.href).href, sizes: '1024x1024', type: 'image/png' }].concat(COVER ? [{ src: COVER, sizes: '512x512', type: 'image/png' }] : [])
     });
   } catch (e) {}
 }
@@ -456,6 +456,8 @@ function updateMediaSession(ep, part) {
   on('seekto', d => { if (d && d.seekTime != null) audio.currentTime = d.seekTime; });
   on('previoustrack', () => { if (current && current.parts && curPart > 0) load(current, true, curPart - 1); });
   on('nexttrack', () => { if (current && current.parts && curPart < current.parts.length - 1) load(current, true, curPart + 1); });
+  audio.addEventListener('playing', () => { if (current) updateMediaSession(current, current.parts ? current.parts[curPart] : null); try { ms.playbackState = 'playing'; } catch (e) {} });
+  audio.addEventListener('pause', () => { try { ms.playbackState = 'paused'; } catch (e) {} });
   audio.addEventListener('timeupdate', () => {
     try { if (ms.setPositionState && audio.duration) ms.setPositionState({ duration: audio.duration, position: audio.currentTime, playbackRate: audio.playbackRate || 1 }); } catch (e) {}
   });
@@ -511,8 +513,8 @@ $('out').addEventListener('click', async ev => {
 });
 refreshCount();
 document.querySelector('.note').textContent = LIVE
-  ? 'Archive loaded (' + LIVE.__src + ') · ' + Object.keys(LIVE.episodes).length + ' dates · build 6' + (INDEX_ERR ? ' · ' + INDEX_ERR : '')
-  : 'Could not load the archive index, so this is sample data. ' + INDEX_ERR + '· build 6';
+  ? 'Archive loaded (' + LIVE.__src + ') · ' + Object.keys(LIVE.episodes).length + ' dates · build 7' + (INDEX_ERR ? ' · ' + INDEX_ERR : '')
+  : 'Could not load the archive index, so this is sample data. ' + INDEX_ERR + '· build 7';
 }
 </script>
 </body>
