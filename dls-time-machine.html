@@ -150,13 +150,23 @@ input[type=range]{flex:1;accent-color:var(--hot);min-width:0}
 const DRIVE_API_KEY = 'AIzaSyDNh_4tVN44R26Z6ZF0TXFbR2gg_0PqEeg';
 // The archive index (index.json) lives in Drive and is rebuilt by the Apps Script `buildIndex`; the app reads it on load.
 const INDEX_FILE_ID = '1xGAAXOlinE4FtSUvQ4jcRp_9xq7erpR8';
+let INDEX_ERR = '';
 async function loadIndex() {
-  try {
-    const r = await fetch('https://www.googleapis.com/drive/v3/files/' + INDEX_FILE_ID + '?alt=media&key=' + DRIVE_API_KEY);
-    if (!r.ok) throw new Error('HTTP ' + r.status);
-    const j = await r.json();
-    return j && j.episodes && Object.keys(j.episodes).length ? j : null;
-  } catch (e) { console.warn('Archive index failed to load', e); return null; }
+  // Try the Drive copy first (always fresh), then an index.json hosted next to this page.
+  const tries = [
+    ['Drive', 'https://www.googleapis.com/drive/v3/files/' + INDEX_FILE_ID + '?alt=media&key=' + DRIVE_API_KEY],
+    ['site', 'index.json?v=' + Date.now()]
+  ];
+  for (const [name, url] of tries) {
+    try {
+      const r = await fetch(url);
+      if (!r.ok) throw new Error('HTTP ' + r.status);
+      const j = await r.json();
+      if (j && j.episodes && Object.keys(j.episodes).length) { j.__src = name; return j; }
+      throw new Error('empty index');
+    } catch (e) { INDEX_ERR += name + ': ' + (e && e.message ? e.message : e) + '. '; }
+  }
+  return null;
 }
 loadIndex().then(main);
 
@@ -501,8 +511,8 @@ $('out').addEventListener('click', async ev => {
 });
 refreshCount();
 document.querySelector('.note').textContent = LIVE
-  ? 'Archive loaded from Drive · ' + Object.keys(LIVE.episodes).length + ' dates · build 5'
-  : 'Could not load the archive index, so this is sample data. · build 5';
+  ? 'Archive loaded (' + LIVE.__src + ') · ' + Object.keys(LIVE.episodes).length + ' dates · build 6' + (INDEX_ERR ? ' · ' + INDEX_ERR : '')
+  : 'Could not load the archive index, so this is sample data. ' + INDEX_ERR + '· build 6';
 }
 </script>
 </body>
