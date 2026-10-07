@@ -438,6 +438,7 @@ let MS_STATUS = '';
 function updateMediaSession(ep, part) {
   if (!('mediaSession' in navigator) || typeof MediaMetadata === 'undefined') { MS_STATUS = 'no MediaSession'; return; }
   const title = part ? fmtDate(ep.date) + ' · ' + part.label + ' of ' + ep.parts.length : fmtDate(ep.date);
+  try { document.title = title + ' · DLS Time Machine'; } catch (e) {}
   const base = { title: title, artist: 'DLS Time Machine', album: era(ep.date) };
   const art = [{ src: new URL('cover.png', location.href).href, sizes: '1024x1024', type: 'image/png' }];
   try { navigator.mediaSession.metadata = new MediaMetadata(Object.assign({ artwork: art }, base)); MS_STATUS = 'MS ok'; }
@@ -459,7 +460,8 @@ function updateMediaSession(ep, part) {
   on('seekto', d => { if (d && d.seekTime != null) audio.currentTime = d.seekTime; });
   on('previoustrack', () => { if (current && current.parts && curPart > 0) load(current, true, curPart - 1); });
   on('nexttrack', () => { if (current && current.parts && curPart < current.parts.length - 1) load(current, true, curPart + 1); });
-  audio.addEventListener('playing', () => { if (current) updateMediaSession(current, current.parts ? current.parts[curPart] : null); try { ms.playbackState = 'playing'; } catch (e) {} });
+  const refresh = () => { if (current) updateMediaSession(current, current.parts ? current.parts[curPart] : null); };
+  ['loadedmetadata', 'play', 'playing'].forEach(ev => audio.addEventListener(ev, () => { refresh(); setTimeout(refresh, 700); try { ms.playbackState = audio.paused ? 'paused' : 'playing'; } catch (e) {} }));
   audio.addEventListener('pause', () => { try { ms.playbackState = 'paused'; } catch (e) {} });
   audio.addEventListener('timeupdate', () => {
     try { if (ms.setPositionState && audio.duration) ms.setPositionState({ duration: audio.duration, position: audio.currentTime, playbackRate: audio.playbackRate || 1 }); } catch (e) {}
@@ -516,8 +518,8 @@ $('out').addEventListener('click', async ev => {
 });
 refreshCount();
 document.querySelector('.note').textContent = LIVE
-  ? 'Archive loaded (' + LIVE.__src + ') · ' + Object.keys(LIVE.episodes).length + ' dates · build 9' + (INDEX_ERR ? ' · ' + INDEX_ERR : '')
-  : 'Could not load the archive index, so this is sample data. ' + INDEX_ERR + '· build 9';
+  ? 'Archive loaded (' + LIVE.__src + ') · ' + Object.keys(LIVE.episodes).length + ' dates · build 10' + (INDEX_ERR ? ' · ' + INDEX_ERR : '')
+  : 'Could not load the archive index, so this is sample data. ' + INDEX_ERR + '· build 10';
 }
 </script>
 </body>
