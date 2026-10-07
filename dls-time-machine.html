@@ -360,6 +360,7 @@ async function load(ep, autoplay, partIdx = 0) {
   current = ep; curPart = partIdx;
   $('now').innerHTML = `<b>${esc(fmtDate(ep.date))}</b> · ${part ? esc(part.label) + ' of ' + ep.parts.length : esc(ep.title)}`;
   audio.src = await Archive.resolveAudio(ep, part);
+  updateMediaSession(ep, part);
   ['seek', 'back', 'fwd', 'pp'].forEach(i => $(i).disabled = false);
   if (autoplay) audio.play().catch(() => {});
 }
@@ -401,6 +402,54 @@ $('back').onclick = () => audio.currentTime = Math.max(0, audio.currentTime - 15
 $('fwd').onclick = () => audio.currentTime = Math.min(audio.duration || 0, audio.currentTime + 30);
 $('vol').oninput = e => audio.volume = e.target.value / 100;
 audio.volume = .8;
+// iPhone Safari ignores a page's volume setting, so hide the dead slider there.
+if (Math.abs(audio.volume - .8) > .01) document.querySelector('.vol').style.display = 'none';
+
+/* ---------- Lock-screen / Control Center (Media Session) ---------- */
+let COVER = '';
+function makeCover() {
+  try {
+    const c = document.createElement('canvas'); c.width = c.height = 512;
+    const g = c.getContext('2d');
+    const bg = g.createLinearGradient(0, 0, 512, 512); bg.addColorStop(0, '#1a1240'); bg.addColorStop(1, '#0d1020');
+    g.fillStyle = bg; g.fillRect(0, 0, 512, 512);
+    const sun = g.createLinearGradient(0, 116, 0, 356); sun.addColorStop(0, '#ffb340'); sun.addColorStop(1, '#ff3d7f');
+    g.fillStyle = sun; g.beginPath(); g.arc(256, 236, 120, 0, Math.PI * 2); g.fill();
+    g.fillStyle = bg; for (let i = 0; i < 5; i++) g.fillRect(100, 250 + i * 22, 312, 4 + i * 3);
+    g.textAlign = 'center'; g.fillStyle = '#f4f1ea';
+    g.font = '110px "Bebas Neue", Impact, sans-serif'; g.fillText('DLS', 256, 432);
+    g.fillStyle = '#27e0c4'; g.font = '44px "Bebas Neue", Impact, sans-serif'; g.fillText('TIME MACHINE', 256, 478);
+    COVER = c.toDataURL('image/png');
+  } catch (e) {}
+}
+if (document.fonts && document.fonts.ready) document.fonts.ready.then(makeCover); else makeCover();
+
+function updateMediaSession(ep, part) {
+  if (!('mediaSession' in navigator) || typeof MediaMetadata === 'undefined') return;
+  try {
+    navigator.mediaSession.metadata = new MediaMetadata({
+      title: part ? fmtDate(ep.date) + ' · ' + part.label + ' of ' + ep.parts.length : fmtDate(ep.date),
+      artist: 'DLS Time Machine',
+      album: era(ep.date),
+      artwork: COVER ? [{ src: COVER, sizes: '512x512', type: 'image/png' }] : []
+    });
+  } catch (e) {}
+}
+(function setupMediaSession() {
+  if (!('mediaSession' in navigator)) return;
+  const ms = navigator.mediaSession;
+  const on = (a, fn) => { try { ms.setActionHandler(a, fn); } catch (e) {} };
+  on('play', () => audio.play());
+  on('pause', () => audio.pause());
+  on('seekbackward', () => { audio.currentTime = Math.max(0, audio.currentTime - 15); });
+  on('seekforward', () => { audio.currentTime = Math.min(audio.duration || 0, audio.currentTime + 30); });
+  on('seekto', d => { if (d && d.seekTime != null) audio.currentTime = d.seekTime; });
+  on('previoustrack', () => { if (current && current.parts && curPart > 0) load(current, true, curPart - 1); });
+  on('nexttrack', () => { if (current && current.parts && curPart < current.parts.length - 1) load(current, true, curPart + 1); });
+  audio.addEventListener('timeupdate', () => {
+    try { if (ms.setPositionState && audio.duration) ms.setPositionState({ duration: audio.duration, position: audio.currentTime, playbackRate: audio.playbackRate || 1 }); } catch (e) {}
+  });
+})();
 
 /* ---------- Filters + Browse ---------- */
 function filters(withDate) {
@@ -452,8 +501,8 @@ $('out').addEventListener('click', async ev => {
 });
 refreshCount();
 document.querySelector('.note').textContent = LIVE
-  ? 'Archive loaded from Drive · ' + Object.keys(LIVE.episodes).length + ' dates · build 4'
-  : 'Could not load the archive index, so this is sample data. · build 4';
+  ? 'Archive loaded from Drive · ' + Object.keys(LIVE.episodes).length + ' dates · build 5'
+  : 'Could not load the archive index, so this is sample data. · build 5';
 }
 </script>
 </body>
