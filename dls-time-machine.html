@@ -98,7 +98,7 @@ input[type=range]{flex:1;accent-color:var(--hot);min-width:0}
   <button class="rand" id="rand">🎲 Random Day</button>
   <button class="browse" id="browse">Browse episodes</button>
   <div id="out"></div>
-  <p class="note">Prototype · sample archive data and generated test audio. Swap in a real archive via the Archive layer.</p>
+  <p class="note">Prototype · sample archive data and generated test audio. Swap in a real archive via the Archive layer. · build 3 (Drive API)</p>
 </div>
 
 <div class="player">
@@ -146,6 +146,8 @@ input[type=range]{flex:1;accent-color:var(--hot);min-width:0}
    To connect a real source: replace MockArchive with an adapter
    (REST API, JSON index, RSS feed...) exposing the same methods.
    ========================================================= */
+// Google Drive API key (restricted to the Drive API and to this site's address in Google Cloud Console).
+const DRIVE_API_KEY = 'AIzaSyDNh_4tVN44R26Z6ZF0TXFbR2gg_0PqEeg';
 const MockArchive = (() => {
   const START = '2015-01-05', END = '2026-10-07';
   // Show formats: 3 hours on ESPN Radio until Aug 2020; after that 2 national hours + LOUR, Big Suey, post-game show.
@@ -262,7 +264,7 @@ const MockArchive = (() => {
     resolveAudio: async (ep, part) => {
       const u = (part || ep).audio_url;
       if (u.startsWith('mock://')) return makeTone(hash(ep.episode_id));
-      if (u.startsWith('drive://')) return 'https://drive.usercontent.google.com/download?id=' + u.slice(8) + '&export=download&confirm=t';
+      if (u.startsWith('drive://')) return 'https://www.googleapis.com/drive/v3/files/' + u.slice(8) + '?alt=media&key=' + DRIVE_API_KEY;
       return u;
     }
   };
