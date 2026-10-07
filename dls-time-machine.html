@@ -86,7 +86,7 @@ input[type=range]{flex:1;accent-color:var(--hot);min-width:0}
   <details class="filters" id="fp">
     <summary class="bebas"><span>Filters <span id="fcount"></span></span></summary>
     <div class="fl"><span class="lb">Era</span>
-      <select id="fe"><option value="">All eras</option><option value="espn">2015–2019 · ESPN era</option><option value="recent">2020–present</option></select></div>
+      <select id="fe"><option value="">All eras</option><option value="pre">Before 2015</option><option value="espn">2015–2019 · ESPN era</option><option value="recent">2020–present</option></select></div>
     <div class="fl"><span class="lb">Show type</span><select id="ft"></select></div>
     <div class="fl"><span class="lb">Crew (must include)</span><div class="chips" id="chips"></div></div>
     <div class="fl"><span class="lb">Episode # or keyword</span><input id="fq" type="search" placeholder="e.g. 1234 or october"></div>
@@ -148,6 +148,19 @@ input[type=range]{flex:1;accent-color:var(--hot);min-width:0}
    ========================================================= */
 // Google Drive API key (restricted to the Drive API and to this site's address in Google Cloud Console).
 const DRIVE_API_KEY = 'AIzaSyDNh_4tVN44R26Z6ZF0TXFbR2gg_0PqEeg';
+// The archive index (index.json) lives in Drive and is rebuilt by the Apps Script `buildIndex`; the app reads it on load.
+const INDEX_FILE_ID = '1xGAAXOlinE4FtSUvQ4jcRp_9xq7erpR8';
+async function loadIndex() {
+  try {
+    const r = await fetch('https://www.googleapis.com/drive/v3/files/' + INDEX_FILE_ID + '?alt=media&key=' + DRIVE_API_KEY);
+    if (!r.ok) throw new Error('HTTP ' + r.status);
+    const j = await r.json();
+    return j && j.episodes && Object.keys(j.episodes).length ? j : null;
+  } catch (e) { console.warn('Archive index failed to load', e); return null; }
+}
+loadIndex().then(main);
+
+function main(LIVE) {
 const MockArchive = (() => {
   const START = '2015-01-05', END = '2026-10-07';
   // Show formats: 3 hours on ESPN Radio until Aug 2020; after that 2 national hours + LOUR, Big Suey, post-game show.
@@ -178,7 +191,7 @@ const MockArchive = (() => {
 
   // Sample "database": one record per weekday, built from a seeded generator.
   const DB = new Map();
-  for (let t = Date.parse(START); t <= Date.parse(END); t += 864e5) {
+  if (!LIVE) for (let t = Date.parse(START); t <= Date.parse(END); t += 864e5) {
     const dt = new Date(t), wd = dt.getUTCDay();
     if (wd === 0 || wd === 6) continue;
     const date = iso(dt), h = hash(date);
@@ -199,9 +212,9 @@ const MockArchive = (() => {
   }
   // Real recordings: index lives in <script id="drive-index"> and overrides the mock row for that date.
   let REAL = {};
-  try { REAL = JSON.parse(document.getElementById('drive-index').textContent); } catch (e) {}
+  if (LIVE) REAL = Object.fromEntries(Object.entries(LIVE.episodes).map(([d, a]) => [d, { parts: a }]));
+  else try { REAL = JSON.parse(document.getElementById('drive-index').textContent); } catch (e) {}
   for (const [date, r] of Object.entries(REAL)) {
-    const base = DB.get(date) || { era: date < '2020-01-01' ? 'espn' : 'recent' };
     const parts = r.parts.map((p, i) => ({
       part_id: date + '-p' + (i + 1), label: p.label || 'Part ' + (i + 1),
       audio_url: 'drive://' + p.drive_id, recorded_at: p.recorded_at,
@@ -209,7 +222,7 @@ const MockArchive = (() => {
     }));
     const label = new Date(date + 'T00:00:00Z').toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric', timeZone: 'UTC' });
     DB.set(date, {
-      episode_id: 'dls-' + date, date, era: base.era,
+      episode_id: 'dls-' + date, date, era: date < '2015-01-01' ? 'pre' : date < '2020-01-01' ? 'espn' : 'recent',
       title: 'Archive recording — ' + label,
       show_type: 'Unlabeled', crew: [],
       audio_url: parts[0].audio_url, parts,
@@ -251,7 +264,7 @@ const MockArchive = (() => {
   }
 
   return {
-    getBounds: () => ({ min: START, max: END }),
+    getBounds: () => ({ min: ALL[0].date, max: ALL[ALL.length - 1].date }),
     getByDate: async d => DB.get(d) || null,
     getRandom: async f => { const p = AVAIL.filter(e => match(e, f)); return p[Math.floor(Math.random() * p.length)] || null; },
     getNeighbors: async (d, f) => ({
@@ -282,7 +295,7 @@ const fmtDur = s => { s = Math.round(s); const h = Math.floor(s / 3600), m = Mat
 const fmtClock = s => { s = Math.floor(s || 0); return `${Math.floor(s / 60)}:${pad(s % 60)}`; };
 const fmtDate = iso => new Date(iso + 'T00:00:00Z').toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric', timeZone: 'UTC' });
 const esc = s => String(s).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
-const era = iso => iso < '2020-01-01' ? '2015–2019 · ESPN era' : '2020–present';
+const era = iso => iso < '2015-01-01' ? 'Before 2015' : iso < '2020-01-01' ? '2015–2019 · ESPN era' : '2020–present';
 
 const ys = $('y'), ms = $('m'), ds = $('d');
 const bounds = Archive.getBounds();
@@ -438,6 +451,10 @@ $('out').addEventListener('click', async ev => {
   showEpisode(await Archive.getByDate(r.dataset.id));
 });
 refreshCount();
+document.querySelector('.note').textContent = LIVE
+  ? 'Archive loaded from Drive · ' + Object.keys(LIVE.episodes).length + ' dates · build 4'
+  : 'Could not load the archive index, so this is sample data. · build 4';
+}
 </script>
 </body>
 </html>
